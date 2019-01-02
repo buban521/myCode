@@ -1,0 +1,6 @@
+//javascript中字符串去前后空格的代码,相当于Java中的trim() 
+		function trim(str){
+			str = str.replace(/^\s*/,""); 	
+			str = str.replace(/\s*$/,"");
+			return str; 
+    }
