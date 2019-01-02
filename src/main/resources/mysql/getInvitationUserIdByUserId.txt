@@ -1,0 +1,29 @@
+﻿--------------mysql数据库，根据用户ID，查询该用户邀请的用户ID
+DELIMITER //
+CREATE FUNCTION `getChildUserIdList`(rootId VARCHAR(32))
+    RETURNS TEXT(51200)
+ BEGIN
+    
+      DECLARE userIdss TEXT(51200);
+      DECLARE invitationCodes VARCHAR(5120);
+      DECLARE userIds VARCHAR(5120);
+      
+      SELECT GROUP_CONCAT(invitation_code) INTO invitationCodes FROM bbs_tribe_member WHERE user_id = rootId ;        
+      
+      WHILE invitationCodes IS NOT NULL DO
+	
+	SELECT GROUP_CONCAT(sys_user.user_id) INTO userIds FROM sys_user WHERE FIND_IN_SET(sys_user.invitationUserCode,invitationCodes) > 0;
+	
+	IF (userIdss IS NOT NULL) THEN
+		SET userIdss = CONCAT(userIdss,',',userIds);
+	ELSE
+		SET userIdss = CONCAT(userIds);
+	END IF;
+	
+	SELECT GROUP_CONCAT(invitation_code) INTO invitationCodes FROM bbs_tribe_member WHERE user_id IN(
+        SELECT user_id FROM bbs_tribe_member WHERE FIND_IN_SET(user_id,userIds) > 0); 
+  
+      END WHILE;      
+
+      RETURN userIdss;
+END //
