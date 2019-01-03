@@ -2,28 +2,37 @@
 DELIMITER //
 CREATE FUNCTION `getChildUserIdList`(rootId VARCHAR(32))
     RETURNS TEXT(51200)
- BEGIN
-    
+BEGIN    
       DECLARE userIdss TEXT(51200);
-      DECLARE invitationCodes VARCHAR(5120);
-      DECLARE userIds VARCHAR(5120);
+      DECLARE invitationCodes TEXT(51200);
+      DECLARE userIds TEXT(51200);
       
-      SELECT GROUP_CONCAT(invitation_code) INTO invitationCodes FROM bbs_tribe_member WHERE user_id = rootId ;        
+      SELECT GROUP_CONCAT(IFNULL(invitation_code,'')) INTO invitationCodes FROM bbs_tribe_member WHERE user_id = rootId ;
       
+      
+      #if invitationCodes IS NOT NULL then
       WHILE invitationCodes IS NOT NULL DO
 	
-	SELECT GROUP_CONCAT(sys_user.user_id) INTO userIds FROM sys_user WHERE FIND_IN_SET(sys_user.invitationUserCode,invitationCodes) > 0;
+	SELECT GROUP_CONCAT(IFNULL(sys_user.user_id,'')) INTO userIds FROM sys_user WHERE FIND_IN_SET(sys_user.invitationUserCode,invitationCodes) > 0;
 	
-	IF (userIdss IS NOT NULL) THEN
-		SET userIdss = CONCAT(userIdss,',',userIds);
-	ELSE
-		SET userIdss = CONCAT(userIds);
+	IF (userIds IS NOT NULL ) THEN 
+	
+		IF (userIdss IS NOT NULL) THEN
+			SET userIdss = CONCAT(userIdss,',',userIds);
+		ELSE
+			SET userIdss = CONCAT(userIds);
+		END IF;	
 	END IF;
 	
-	SELECT GROUP_CONCAT(invitation_code) INTO invitationCodes FROM bbs_tribe_member WHERE user_id IN(
+	SET invitationCodes = NULL;
+	
+	SELECT GROUP_CONCAT(IFNULL(invitation_code,'')) INTO invitationCodes FROM bbs_tribe_member WHERE user_id IN(
         SELECT user_id FROM bbs_tribe_member WHERE FIND_IN_SET(user_id,userIds) > 0); 
-  
-      END WHILE;      
+        
+        
+      #END if;
+      END WHILE;
+      
 
       RETURN userIdss;
 END //
